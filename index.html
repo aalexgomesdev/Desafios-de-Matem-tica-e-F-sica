@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desafio das Exatas 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#e8eefb;--mute:#a7b6d3;--mat:#7ea2ff;--fis:#ff9a62;--ok:#5ad08a;--bad:#ff7b7b;--glass:rgba(11,17,42,.66);--line:rgba(160,185,255,.28);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#070b1f;color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#ui{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
+nav{pointer-events:auto;display:flex;gap:6px;padding:5px;border:1px solid var(--line);border-radius:99px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:5}
+nav button{font:inherit;font-weight:600;font-size:.9rem;color:var(--mute);background:none;border:0;border-radius:99px;padding:8px 16px;cursor:pointer;transition:.2s}
+nav button.on{background:linear-gradient(135deg,#4f7bff,#9b5cff);color:#fff;box-shadow:0 0 18px rgba(99,120,255,.6)}
+#app{pointer-events:auto;flex:1;min-height:0;overflow:auto;width:100%;max-width:640px;display:flex;margin-top:10px;perspective:1100px}
+.card{margin:auto;width:100%;background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:22px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12);animation:pop .6s cubic-bezier(.2,.8,.2,1) backwards}
+#app .card{transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .2s}
+@keyframes pop{from{opacity:0;transform:translateY(30px) rotateX(18deg) scale(.95)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}}
+h1{font-size:clamp(2rem,8vw,3rem);line-height:1;margin:0 0 12px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(100deg,#fff,#9db6ff 45%,#ffb27d);-webkit-background-clip:text;background-clip:text;color:transparent}
+p{line-height:1.5;color:var(--mute);margin:0 0 12px}
+.tag,.pill{font-size:.8rem;font-weight:600;padding:3px 12px;border-radius:99px;border:1px solid currentColor;display:inline-block}
+.mat{color:var(--mat)}.fis{color:var(--fis)}
+.btn,.btn2,.back,.opt{font:inherit;cursor:pointer;color:var(--ink);transition:transform .2s,background .2s,box-shadow .2s}
+.btn{background:linear-gradient(135deg,#4f7bff,#9b5cff);border:0;border-radius:14px;padding:13px 20px;font-weight:800;font-size:1.05rem;color:#fff;box-shadow:0 6px 24px rgba(79,123,255,.45)}
+.btn:hover{transform:translateY(-3px) translateZ(20px);box-shadow:0 12px 30px rgba(120,100,255,.6)}
+.btn2,.back{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:600;display:block;width:100%;margin-top:10px;text-align:left}
+.back{width:auto;margin:0 0 12px;display:inline-block}
+.btn2:hover,.back:hover{background:rgba(255,255,255,.14)}.btn2.hot{background:var(--ink);color:#0b1230}
+.modes{display:grid;gap:10px;margin-top:8px}.mode{display:flex;justify-content:space-between;align-items:center;text-align:left}.mode small{opacity:.8;font-weight:600;font-size:.8rem}
+.mode[data-m=fis]{background:linear-gradient(135deg,#ff7a3c,#ff4f7b);box-shadow:0 6px 24px rgba(255,122,60,.4)}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:600}
+.bar{height:9px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:12px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#4f7bff,#9b5cff);transition:width .6s cubic-bezier(.2,.8,.2,1);border-radius:99px}
+#time i{background:linear-gradient(90deg,#ff9a62,#ffd166);transition:width .12s linear}#time.low i{background:var(--bad)}
+.q{font-size:clamp(1.2rem,4.6vw,1.55rem);font-weight:600;line-height:1.3;margin:6px 0 16px;min-height:3.6em}
+.opts{display:grid;gap:10px;transform-style:preserve-3d}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-weight:600;font-size:1.04rem;animation:rise .5s cubic-bezier(.2,.8,.2,1) backwards}
+.opt:nth-child(2){animation-delay:.06s}.opt:nth-child(3){animation-delay:.12s}.opt:nth-child(4){animation-delay:.18s}
+.opt:hover:not(:disabled){background:rgba(126,162,255,.2);transform:translateX(6px) translateZ(24px) rotateY(-3deg)}
+.opt b{width:28px;height:28px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:.8rem;flex:none}
+.opt.ok{background:rgba(90,208,138,.2);border-color:var(--ok);color:var(--ok)}.opt.bad{background:rgba(255,123,123,.18);border-color:var(--bad);color:var(--bad);animation:shake .45s}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;padding:12px 14px;border-left:4px solid var(--ink);background:rgba(255,255,255,.07);border-radius:8px;line-height:1.45;animation:rise .4s}
+.fb.ok{border-color:var(--ok)}.fb.bad{border-color:var(--bad)}.fb strong{display:block}
+.step{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;line-height:1.45;animation:rise .4s}.step b{display:block;color:var(--mat)}.step.fin{border-color:var(--ok);color:var(--ok);font-weight:800}
+.next{margin-top:14px;width:100%}.hide{display:none!important}
+.big{font-size:4rem;font-weight:800;line-height:1;margin:6px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.stats div{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.stats b{display:block;font-size:1.5rem}.stats span{font-size:.8rem;color:var(--mute)}
+#rev h2{font-size:1.1rem;margin:16px 0 8px}#rev details{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px}#rev summary{cursor:pointer;font-weight:600}#rev ol{padding-left:20px;color:var(--mute);line-height:1.5}
+#lab{pointer-events:auto;position:fixed;z-index:4;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-height:46vh;overflow:auto;padding:16px}
+@media(min-width:900px){#lab{top:calc(64px + env(safe-area-inset-top,0px));right:16px;left:auto;bottom:16px;width:390px;max-height:none}}
+#lab h1{font-size:1.5rem;margin-bottom:8px}#fx{font-size:1.35rem;font-weight:800;margin:6px 0}
+.tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}.tabs button{flex:1 1 90px;font:inherit;font-weight:600;font-size:.85rem;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer}.tabs button.on{background:var(--ink);color:#0b1230}
+.row{display:grid;grid-template-columns:40px 1fr 50px;gap:8px;align-items:center;margin:6px 0;font-weight:600}.row output{text-align:right}
+.chk{display:flex;align-items:center;gap:5px}input[type=range]{width:100%;accent-color:#7ea2ff}
+#info{padding-left:18px;line-height:1.5;margin:8px 0;font-size:.92rem}
+#modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(4,8,22,.7);padding:14px}
+.mbox{width:100%;max-width:560px;max-height:85vh;overflow:auto;background:#101a3a;border:1px solid var(--line);border-radius:18px;padding:18px;animation:pop .4s}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+#mx{font:inherit;background:none;color:var(--ink);border:1px solid var(--line);border-radius:8px;width:36px;height:36px;cursor:pointer}
+#mbody ol{list-style:none;padding:0;margin:0;counter-reset:s}#mbody li{counter-increment:s;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;line-height:1.5}#mbody li b{display:block;color:var(--mat)}#mbody li b::before{content:counter(s) '. '}
+:focus-visible{outline:3px solid var(--mat);outline-offset:2px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+<nav><button id="tq" class="on">Quiz 3D</button><button id="tl">Laboratório 3D</button><button id="snd" aria-label="Som">🔊</button></nav>
+<main id="app">
+<section id="start" class="card">
+<h1>Desafio das Exatas 3D</h1>
+<div style="margin-bottom:14px"><span class="tag mat">Matemática</span> <span class="tag fis">Física</span></div>
+<p>Um universo de sólidos e símbolos reage às suas respostas. 15 questões sorteadas de um banco com 100, 45 segundos cada. O anel de esferas é o seu tempo, e a torre cresce com a sua sequência de acertos.</p>
+<p>Dica: teclas 1 a 4 respondem, Enter avança. Mova o mouse para girar a cena.</p>
+<div class="modes"><button class="btn mode" data-m="mat">Matemática <small>15 questões</small></button><button class="btn mode" data-m="fis">Física <small>15 questões</small></button><button class="btn mode" data-m="ambas">Matemática + Física <small>15 questões misturadas</small></button></div>
+</section>
+<section id="game" class="card hide">
+<button class="back" id="back">← Voltar</button>
+<div class="top"><span class="pill" id="sub"></span><span id="pts">0 pts</span><span id="streak"></span></div>
+<div class="bar" id="prog"><i></i></div><div class="bar" id="time"><i></i></div>
+<div class="q" id="q"></div><div class="opts" id="opts"></div><div id="fb"></div>
+<button class="btn next hide" id="next">Próxima questão</button>
+</section>
+<section id="end" class="card hide">
+<h1 id="title"></h1><div class="big" id="final"></div>
+<div class="stats"><div><b id="s1"></b><span>acertos</span></div><div><b id="s2"></b><span>melhor sequência</span></div><div><b id="s4"></b><span>em matemática</span></div><div><b id="s3"></b><span>em física</span></div></div>
+<p id="msg"></p><div id="rev"></div>
+<button class="btn" id="again" style="width:100%">Jogar de novo</button><button class="btn2" id="menu">Escolher outra matéria</button>
+</section>
+</main>
+<section id="lab" class="card hide">
+<h1>Laboratório 3D de funções</h1>
+<div class="tabs"><button class="on" id="g1">1º grau</button><button id="g2">2º grau</button><button id="g3">3º grau</button></div>
+<div class="tabs"><button class="on" id="v0">Curva</button><button id="v1">Sólido de revolução</button><button id="v2">Superfície</button></div>
+<div id="fx"></div>
+<div class="row"><label for="ra">a</label><input type="range" id="ra" min="-100" max="100" step="0.5" value="1"><output id="oa"></output></div>
+<div class="row"><label for="rb">b</label><input type="range" id="rb" min="-100" max="100" step="0.5" value="0"><output id="ob"></output></div>
+<div class="row hide" id="rowc"><label for="rc">c</label><input type="range" id="rc" min="-100" max="100" step="0.5" value="0"><output id="oc"></output></div>
+<div class="row hide" id="rowd"><label for="rd">d</label><input type="range" id="rd" min="-100" max="100" step="0.5" value="0"><output id="od"></output></div>
+<div class="row"><label class="chk"><input type="checkbox" id="ux" checked> x</label><input type="range" id="rx" min="-100" max="100" step="0.5" value="2"><output id="ox"></output></div>
+<div class="fb" id="ev"></div>
+<ul id="info"></ul>
+<p style="font-size:.85rem">Arraste a cena para girar, role para aproximar. 🟢 raízes · 🟠 vértice, extremos, inflexão e corte em y · ⚪ valor de x. <span id="vw"></span></p>
+<div class="tabs"><button id="zi">Zoom +</button><button id="zo">Zoom −</button><button id="za">Auto</button></div>
+<button class="btn next" id="calc">Ver cálculos passo a passo</button>
+</section>
+</div>
+<div id="modal" class="hide" role="dialog" aria-modal="true"><div class="mbox"><div class="mhead"><b id="mt"></b><button id="mx" aria-label="Fechar">✕</button></div><div id="mbody"></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),V3=THREE.Vector3;
+const BANK=[
+{s:"Matemática",q:"Quais são as raízes da equação x² − 5x + 6 = 0?",o:["1 e 6","2 e 3","−2 e −3","−1 e 6"],a:1,e:"Soma 5 e produto 6: os números são 2 e 3."},
+{s:"Matemática",q:"Qual é o valor de log₂ 32?",o:["4","5","6","16"],a:1,e:"2⁵ = 32, então log₂ 32 = 5."},
+{s:"Matemática",q:"Qual é o valor de sen 30°?",o:["√3/2","√2/2","1/2","1"],a:2,e:"sen 30° = 1/2, um dos ângulos notáveis."},
+{s:"Matemática",q:"Em uma PA com a₁ = 3 e razão 4, qual é o 10º termo?",o:["36","39","43","40"],a:1,e:"a₁₀ = 3 + 9·4 = 39."},
+{s:"Matemática",q:"Ao lançar uma moeda justa duas vezes, qual a probabilidade de sair cara nas duas?",o:["1/2","1/3","1/4","3/4"],a:2,e:"(1/2) · (1/2) = 1/4."},
+{s:"Matemática",q:"Qual é a área de um círculo de raio 3 cm?",o:["6π cm²","9π cm²","3π cm²","18π cm²"],a:1,e:"A = π·r² = π·3² = 9π cm²."},
+{s:"Matemática",q:"Qual é a soma dos ângulos internos de um hexágono?",o:["540°","600°","720°","900°"],a:2,e:"S = (n − 2)·180° = 4·180° = 720°."},
+{s:"Matemática",q:"Se f(x) = 2x + 1, qual é o valor de f(4)?",o:["8","9","10","7"],a:1,e:"f(4) = 2·4 + 1 = 9."},
+{s:"Matemática",q:"Em um triângulo retângulo com catetos 6 e 8, quanto mede a hipotenusa?",o:["10","12","14","7"],a:0,e:"Pitágoras: √(6² + 8²) = √100 = 10."},
+{s:"Matemática",q:"Quantos anagramas tem a palavra AMOR?",o:["12","16","24","4"],a:2,e:"Permutação de 4 letras distintas: 4! = 24."},
+{s:"Física",q:"Um carro viaja a 72 km/h. Qual é a sua velocidade em m/s?",o:["10 m/s","20 m/s","25 m/s","72 m/s"],a:1,e:"Divida por 3,6: 72 ÷ 3,6 = 20 m/s."},
+{s:"Física",q:"Qual a força resultante em um corpo de 5 kg com aceleração de 3 m/s²?",o:["8 N","1,7 N","15 N","30 N"],a:2,e:"Segunda lei de Newton: F = m·a = 5·3 = 15 N."},
+{s:"Física",q:"Qual a energia cinética de um corpo de 2 kg a 4 m/s?",o:["8 J","16 J","32 J","4 J"],a:1,e:"Ec = m·v²/2 = 2·16/2 = 16 J."},
+{s:"Física",q:"Um objeto cai do repouso por 3 s (g = 10 m/s², sem atrito). Qual altura percorre?",o:["30 m","45 m","90 m","15 m"],a:1,e:"h = g·t²/2 = 10·9/2 = 45 m."},
+{s:"Física",q:"Um resistor de 4 Ω está ligado a 12 V. Qual a corrente elétrica?",o:["3 A","48 A","8 A","0,33 A"],a:0,e:"Lei de Ohm: i = V/R = 12/4 = 3 A."},
+{s:"Física",q:"Uma força de 100 N age sobre uma área de 2 m². Qual a pressão?",o:["200 Pa","50 Pa","100 Pa","0,02 Pa"],a:1,e:"P = F/A = 100/2 = 50 Pa."},
+{s:"Física",q:"Quanto calor é necessário para aquecer 100 g de água em 20 °C? (c = 1 cal/g·°C)",o:["120 cal","2000 cal","20 cal","500 cal"],a:1,e:"Q = m·c·ΔT = 100·1·20 = 2000 cal."},
+{s:"Física",q:"Um objeto está a 3 m de um espelho plano. Qual a distância entre o objeto e sua imagem?",o:["3 m","6 m","1,5 m","9 m"],a:1,e:"A imagem fica 3 m atrás do espelho: 3 + 3 = 6 m."},
+{s:"Física",q:"Um aparelho de 220 V consome 5 A. Qual a sua potência?",o:["44 W","225 W","1100 W","1760 W"],a:2,e:"P = V·i = 220·5 = 1100 W."},
+{s:"Física",q:"Qual o peso de uma pessoa de 60 kg, com g = 10 m/s²?",o:["60 N","6 N","600 N","6000 N"],a:2,e:"P = m·g = 60·10 = 600 N."}
+];
+const STEPS=[
+["Identifique os coeficientes|a = 1, b = −5 e c = 6.","Calcule o delta|Δ = b² − 4ac = 25 − 24 = 1.","Aplique Bhaskara|x = (5 ± √1) / 2 = (5 ± 1) / 2.","Conclua|x = 6/2 = 3 e x = 4/2 = 2. As raízes são 2 e 3."],
+["Entenda a pergunta|log₂ 32 = x significa 2ˣ = 32.","Fatore o 32|32 = 2·2·2·2·2 = 2⁵.","Compare os expoentes|2ˣ = 2⁵, então x = 5."],
+["Monte um triângulo|Pegue um triângulo equilátero de lado 2 e trace a altura: ele se divide em dois triângulos 30°-60°-90°.","Identifique os lados|O cateto oposto ao ângulo de 30° mede 1 (metade da base) e a hipotenusa mede 2.","Aplique a definição|sen = cateto oposto / hipotenusa = 1/2."],
+["Lembre a fórmula|aₙ = a₁ + (n − 1)·r.","Substitua os valores|a₁₀ = 3 + (10 − 1)·4.","Calcule|a₁₀ = 3 + 9·4 = 3 + 36 = 39."],
+["Liste as possibilidades|Em dois lançamentos: CC, CK, KC e KK. São 4 casos.","Conte os casos favoráveis|Só CC tem duas caras: 1 caso.","Divida|P = 1/4. Também dá para fazer 1/2 · 1/2, pois os lançamentos são independentes."],
+["Lembre a fórmula|A = π·r².","Substitua|Com r = 3: A = π·3².","Calcule|3² = 9, logo A = 9π cm². Cuidado: 6π seria o comprimento da circunferência (2πr), não a área."],
+["Lembre a fórmula|S = (n − 2)·180°, em que n é o número de lados.","Substitua|O hexágono tem 6 lados: S = (6 − 2)·180°.","Calcule|S = 4·180° = 720°. É o mesmo que dividir o hexágono em 4 triângulos."],
+["Entenda a notação|f(4) significa trocar x por 4 na função.","Substitua|f(4) = 2·4 + 1.","Calcule|2·4 = 8 e 8 + 1 = 9."],
+["Identifique os lados|Os catetos medem 6 e 8. A hipotenusa h é o lado oposto ao ângulo reto.","Aplique Pitágoras|h² = 6² + 8² = 36 + 64.","Calcule|h² = 100, então h = 10. É o triângulo 3-4-5 ampliado 2 vezes."],
+["Reconheça o problema|Anagrama é qualquer troca de ordem das letras. As 4 letras de AMOR são diferentes.","Conte as escolhas|1ª posição: 4 letras. 2ª: 3. 3ª: 2. 4ª: 1.","Multiplique|4·3·2·1 = 4! = 24."],
+["Relacione as unidades|1 km = 1000 m e 1 h = 3600 s.","Converta|72 km/h = 72·1000 m / 3600 s.","Simplifique|72000/3600 = 20 m/s. Atalho: divida km/h por 3,6."],
+["Identifique os dados|m = 5 kg e a = 3 m/s².","Escolha a lei|Segunda lei de Newton: F = m·a.","Calcule|F = 5·3 = 15 N."],
+["Lembre a fórmula|Ec = m·v²/2.","Substitua|Com m = 2 kg e v = 4 m/s: Ec = 2·4²/2.","Calcule|4² = 16, então Ec = 2·16/2 = 16 J. Atenção: só a velocidade é elevada ao quadrado."],
+["Escolha a fórmula|Na queda livre a partir do repouso: h = g·t²/2.","Substitua|Com g = 10 e t = 3: h = 10·3²/2.","Calcule|3² = 9, então h = 10·9/2 = 45 m."],
+["Lembre a Lei de Ohm|V = R·i, logo i = V/R.","Substitua|i = 12/4.","Calcule|i = 3 A."],
+["Lembre a fórmula|P = F/A.","Substitua|F = 100 N e A = 2 m².","Calcule|P = 100/2 = 50 Pa (1 Pa = 1 N/m²)."],
+["Lembre a fórmula|Q = m·c·ΔT.","Substitua|m = 100 g, c = 1 cal/g·°C e ΔT = 20 °C.","Calcule|Q = 100·1·20 = 2000 cal."],
+["Lembre a propriedade|No espelho plano, a imagem fica à mesma distância do espelho que o objeto, do lado oposto.","Meça cada lado|Objeto: 3 m à frente do espelho. Imagem: 3 m atrás.","Some as distâncias|Entre objeto e imagem: 3 + 3 = 6 m."],
+["Lembre a fórmula|P = V·i.","Substitua|V = 220 V e i = 5 A.","Calcule|P = 220·5 = 1100 W."],
+["Diferencie massa e peso|Massa (kg) mede a quantidade de matéria. Peso (N) é a força da gravidade.","Lembre a fórmula|P = m·g.","Calcule|P = 60·10 = 600 N."]
+];
+BANK.forEach((q,n)=>q.r=STEPS[n]);
+BANK.push(...(()=>{
+  const N=v=>(Math.round(v*100)/100).toString().replace('.',',').replace('-','−'),M='Matemática',F='Física',G=[],pl=n=>n<0?'('+N(n)+')':N(n),sg=n=>(n<0?'− ':'+ ')+N(Math.abs(n));
+  const mq=(s,q,v,wr,f,e,st)=>{const c=f(v),w=[...new Set(wr.map(f))].filter(x=>x!==c);let k=2;while(w.length<3&&k<60){const x=f(v*k++);if(x!==c&&!w.includes(x))w.push(x)}G.push({s,q,o:[c,...w.slice(0,3)],a:0,e,r:st})};
+  [[3,5,20],[2,-4,10],[5,3,28],[4,-6,14],[6,2,26]].forEach(([a,b,c])=>{const v=(c-b)/a;mq(M,`Resolva a equação ${a}x ${sg(b)} = ${c}.`,v,[(c+b)/a,c-b,(c-b)*a],x=>'x = '+N(x),`x = (${c} ${sg(-b)}) / ${a} = ${N(v)}.`,['Isole o termo com x|'+a+'x = '+c+' '+sg(-b)+' = '+(c-b),'Divida pelo coeficiente|x = '+(c-b)+' / '+a,'Calcule|x = '+N(v)])});
+  [[20,150],[15,200],[35,80],[12,250],[45,60]].forEach(([p,t])=>{const v=p*t/100;mq(M,`Quanto é ${p}% de ${t}?`,v,[p*t/10,t-v,t+v],N,`${p}/100 · ${t} = ${N(v)}.`,['Escreva como fração|'+p+'% = '+p+'/100','Multiplique pelo total|'+p+'/100 · '+t,'Calcule|'+N(v)])});
+  [[6,4],[10,7],[9,8],[12,5],[14,3]].forEach(([b,h])=>{const v=b*h/2;mq(M,`Qual é a área de um triângulo de base ${b} cm e altura ${h} cm?`,v,[b*h,b+h,b*h/3],x=>N(x)+' cm²',`A = b·h/2 = ${b}·${h}/2 = ${N(v)} cm².`,['Lembre a fórmula|A = b·h/2','Substitua|A = '+b+'·'+h+'/2','Calcule|A = '+b*h+'/2 = '+N(v)+' cm²'])});
+  [2,3,4,5,6].forEach(a=>{const v=a**3;mq(M,`Qual é o volume de um cubo de aresta ${a} cm?`,v,[3*a,a*a,6*a*a],x=>N(x)+' cm³',`V = a³ = ${a}³ = ${v} cm³.`,['Lembre a fórmula|V = a³','Substitua|V = '+a+'·'+a+'·'+a,'Calcule|V = '+v+' cm³'])});
+  [[4,6,8,10,12],[2,5,7,9,12],[10,20,30,40,50],[3,3,6,9,9],[15,18,21,24,27]].forEach(l=>{const s=l.reduce((x,y)=>x+y),v=s/5;mq(M,`Qual é a média aritmética de ${l.join(', ')}?`,v,[s,v+1,v-1],N,`Soma = ${s}; ${s}/5 = ${N(v)}.`,['Some os valores|'+l.join(' + ')+' = '+s,'Divida pela quantidade|'+s+' / 5','Calcule|Média = '+N(v)])});
+  [[1000,2,5],[2000,3,4],[500,4,6],[1500,2,10],[800,5,3]].forEach(([c,i,t])=>{const v=c*i*t/100;mq(M,`Qual o juro simples de R$ ${c} a ${i}% ao mês durante ${t} meses?`,v,[c*i*t,c+v,v*2],x=>'R$ '+N(x),`J = C·i·t = ${c}·${N(i/100)}·${t} = R$ ${N(v)}.`,['Lembre a fórmula|J = C·i·t, com i na forma decimal','Substitua|J = '+c+' · '+N(i/100)+' · '+t,'Calcule|J = R$ '+N(v)])});
+  [[1,2,3,8],[0,1,2,7],[2,5,4,1],[1,3,5,11],[-1,4,3,-4]].forEach(([x1,y1,x2,y2])=>{const v=(y2-y1)/(x2-x1);mq(M,`Qual o coeficiente angular da reta que passa por (${N(x1)}; ${N(y1)}) e (${N(x2)}; ${N(y2)})?`,v,[1/v,y2-y1,-v],N,`m = (${N(y2)} − ${pl(y1)}) / (${N(x2)} − ${pl(x1)}) = ${N(v)}.`,['Lembre a fórmula|m = (y₂ − y₁) / (x₂ − x₁)','Substitua|m = ('+N(y2)+' − '+pl(y1)+') / ('+N(x2)+' − '+pl(x1)+')','Calcule|m = '+N(y2-y1)+' / '+N(x2-x1)+' = '+N(v)])});
+  [[2,3,4],[1,2,6],[5,2,4],[3,3,3],[4,2,5]].forEach(([a,q,n])=>{const v=a*q**(n-1);mq(M,`Em uma PG com a₁ = ${a} e razão ${q}, qual é o ${n}º termo?`,v,[a*q*n,a*q**n,a+(n-1)*q],N,`aₙ = a₁·q^(n−1) = ${a}·${q}^${n-1} = ${v}.`,['Lembre a fórmula|aₙ = a₁ · q^(n − 1)','Substitua|a'+n+' = '+a+' · '+q+'^'+(n-1),'Calcule|'+q+'^'+(n-1)+' = '+q**(n-1)+', então a'+n+' = '+v])});
+  [[15,8],[20,7],[12,9],[25,4],[30,5]].forEach(([s,t])=>{const v=s*t;mq(F,`Um carro se move a ${s} m/s, em velocidade constante, por ${t} s. Que distância percorre?`,v,[s+t,s/t,2*v],x=>N(x)+' m',`d = v·t = ${s}·${t} = ${v} m.`,['Lembre a fórmula do MRU|d = v·t','Substitua|d = '+s+' · '+t,'Calcule|d = '+v+' m'])});
+  [[0,20,5],[10,30,4],[5,35,6],[0,24,8],[8,28,5]].forEach(([v1,v2,t])=>{const v=(v2-v1)/t;mq(F,`Um veículo passa de ${v1} m/s para ${v2} m/s em ${t} s. Qual a aceleração média?`,v,[(v2-v1)*t,v2/t,t/(v2-v1)],x=>N(x)+' m/s²',`a = Δv/Δt = ${v2-v1}/${t} = ${N(v)} m/s².`,['Ache a variação de velocidade|Δv = '+v2+' − '+v1+' = '+(v2-v1)+' m/s','Lembre a fórmula|a = Δv / Δt','Calcule|a = '+(v2-v1)+' / '+t+' = '+N(v)+' m/s²'])});
+  [[10,5],[25,4],[30,6],[8,12],[15,10]].forEach(([fo,d])=>{const v=fo*d;mq(F,`Uma força de ${fo} N desloca um corpo por ${d} m na direção da força. Qual o trabalho realizado?`,v,[fo+d,fo/d,v/2],x=>N(x)+' J',`τ = F·d = ${fo}·${d} = ${v} J.`,['Lembre a fórmula|τ = F · d','Substitua|τ = '+fo+' · '+d,'Calcule|τ = '+v+' J'])});
+  [[600,30],[1000,20],[900,30],[1200,40],[800,16]].forEach(([w,t])=>{const v=w/t;mq(F,`Um motor realiza ${w} J de trabalho em ${t} s. Qual a potência?`,v,[w*t,w-t,v/2],x=>N(x)+' W',`P = τ/Δt = ${w}/${t} = ${N(v)} W.`,['Lembre a fórmula|P = τ / Δt','Substitua|P = '+w+' / '+t,'Calcule|P = '+N(v)+' W'])});
+  [[200,50],[150,30],[96,12],[75,25],[180,20]].forEach(([m,V])=>{const v=m/V;mq(F,`Um bloco de ${m} g ocupa ${V} cm³. Qual a sua densidade?`,v,[m*V,m-V,V/m],x=>N(x)+' g/cm³',`d = m/V = ${m}/${V} = ${N(v)} g/cm³.`,['Lembre a fórmula|d = m / V','Substitua|d = '+m+' / '+V,'Calcule|d = '+N(v)+' g/cm³'])});
+  [[2,3,5],[4,6,10],[1,2,3],[10,20,30],[5,5,15]].forEach(([a,b,c])=>{const v=a+b+c;mq(F,`Três resistores de ${a} Ω, ${b} Ω e ${c} Ω estão ligados em série. Qual a resistência equivalente?`,v,[a*b*c,v/3,v/2],x=>N(x)+' Ω',`Em série, as resistências se somam: ${a} + ${b} + ${c} = ${v} Ω.`,['Lembre a regra da associação em série|Req = R₁ + R₂ + R₃','Substitua|Req = '+a+' + '+b+' + '+c,'Calcule|Req = '+v+' Ω'])});
+  [[2,5],[3,10],[5,4],[10,3],[4,8]].forEach(([m,h])=>{const v=m*10*h;mq(F,`Um corpo de ${m} kg está a ${h} m de altura (g = 10 m/s²). Qual a energia potencial gravitacional?`,v,[m*h,v/2,m+h+10],x=>N(x)+' J',`Ep = m·g·h = ${m}·10·${h} = ${v} J.`,['Lembre a fórmula|Ep = m·g·h','Substitua|Ep = '+m+' · 10 · '+h,'Calcule|Ep = '+v+' J'])});
+  [.5,.25,.1,.2,.05].forEach(T=>{const v=1/T;mq(F,`Um pêndulo tem período de ${N(T)} s. Qual a sua frequência?`,v,[T,v*10,1/(2*T)],x=>N(x)+' Hz',`f = 1/T = 1/${N(T)} = ${N(v)} Hz.`,['Lembre a relação|f = 1 / T','Substitua|f = 1 / '+N(T),'Calcule|f = '+N(v)+' Hz'])});
+  return G;
+})());
+BANK.push(...((s,t)=>t.trim().split('\n').map(l=>{const[q,c,a,b,d,e]=l.split('|');return{s,q,o:[c,a,b,d],a:0,e,r:['Resolução|'+e]}}))('Matemática',`Qual é o MMC de 12 e 18?|36|6|72|24|12 = 2²·3 e 18 = 2·3², então MMC = 2²·3² = 36.
+Qual é o MDC de 24 e 36?|12|6|72|8|Fatores comuns: 2²·3 = 12.
+Quantos divisores positivos tem o número 36?|9|8|6|12|36 = 2²·3², então (2+1)(2+1) = 9.
+Qual é o valor de cos 60°?|1/2|√3/2|√2/2|0|Ângulo notável: cos 60° = 1/2.
+Qual é o valor de tg 45°?|1|0|√3|1/2|Em 45°, seno e cosseno são iguais, então tg = 1.
+Quantos graus tem 2π/3 rad?|120°|60°|90°|240°|π rad = 180°, então 2·180°/3 = 120°.
+Qual é o valor de log₁₀ 1000?|3|2|10|100|10³ = 1000.
+Qual é o valor de 2⁻³?|1/8|−8|−6|1/6|2⁻³ = 1/2³ = 1/8.
+Se f(x) = x² − 3x, qual é f(−2)?|10|−10|2|−2|f(−2) = 4 + 6 = 10.
+Qual é a abscissa do vértice de y = x² − 4x + 3?|2|−2|4|1|xᵥ = −b/2a = 4/2 = 2.
+Qual é o discriminante de x² + 4x + 5 = 0?|−4|36|4|16|Δ = 16 − 20 = −4.
+Qual é a soma das raízes de x² − 7x + 10 = 0?|7|10|−7|3|Soma = −b/a = 7.
+Qual é a solução de 2x − 6 > 4?|x > 5|x > 2|x < 5|x > 10|2x > 10, então x > 5.
+Qual é o valor de x em 3ˣ = 81?|4|3|27|5|81 = 3⁴.
+Qual é a distância entre A(1, 2) e B(4, 6)?|5|7|25|√7|√(3² + 4²) = 5.
+Qual é o ponto médio de A(2, 4) e B(8, 10)?|(5, 7)|(10, 14)|(6, 6)|(4, 6)|Média das coordenadas: (5, 7).
+Qual é a reta de coeficiente angular 2 que passa por (0, 3)?|y = 2x + 3|y = 3x + 2|y = 2x − 3|y = x + 5|y = mx + n, com m = 2 e n = 3.
+Qual é o raio da circunferência x² + y² = 49?|7|49|14|3,5|r² = 49, então r = 7.
+Qual é o determinante da matriz [[2, 3], [1, 4]]?|5|11|8|−5|2·4 − 3·1 = 5.
+Qual é o valor de i²?|−1|1|i|−i|Na unidade imaginária, i² = −1.
+Qual é o módulo do número complexo 3 + 4i?|5|7|25|√7|√(9 + 16) = 5.
+Quantas comissões de 2 pessoas saem de um grupo de 5?|10|20|25|5|C(5,2) = 10.
+Quantos números de 3 algarismos distintos se formam com 1, 2, 3 e 4?|24|12|64|6|A(4,3) = 4·3·2 = 24.
+Em um dado justo, qual a probabilidade de sair número par?|1/2|1/3|1/6|2/3|3 casos favoráveis em 6.
+Qual é a mediana de 3, 9, 5, 7, 1?|5|7|3|9|Ordenando: 1, 3, 5, 7, 9; o termo central é 5.
+Qual é a moda de 2, 3, 3, 5, 3, 7, 5?|3|5|2|7|O 3 aparece 3 vezes, mais que os outros.
+Qual é o termo geral da PA 5, 8, 11, ...?|3n + 2|3n + 5|5n + 3|n + 5|aₙ = 5 + 3(n − 1) = 3n + 2.
+Qual é a soma dos 10 primeiros números naturais não nulos?|55|50|45|100|S = 10·(1 + 10)/2 = 55.
+Qual é a soma infinita da PG 1, 1/2, 1/4, ...?|2|1|3/2|4|S = a₁/(1 − q) = 1/(1/2) = 2.
+Qual é a área de um trapézio de bases 8 e 4 cm e altura 5 cm?|30 cm²|60 cm²|20 cm²|40 cm²|(8 + 4)·5/2 = 30.
+Qual é o volume de um cilindro de raio 2 cm e altura 5 cm?|20π cm³|10π cm³|40π cm³|25π cm³|V = πr²h = π·4·5 = 20π.
+Qual é o volume de uma esfera de raio 3 cm?|36π cm³|12π cm³|27π cm³|108π cm³|V = 4πr³/3 = 4π·27/3 = 36π.
+Quantas diagonais tem um pentágono?|5|10|8|15|d = n(n − 3)/2 = 5·2/2 = 5.
+Cada ângulo interno de um octógono regular mede:|135°|120°|144°|150°|(8 − 2)·180°/8 = 135°.
+Se 4 operários fazem uma obra em 6 dias, quantos dias levam 8 operários?|3|12|4|2|Grandezas inversas: 4·6/8 = 3.
+Um produto de R$ 200 recebe 15% de desconto. Qual o novo preço?|R$ 170|R$ 185|R$ 150|R$ 215|200 · 0,85 = 170.
+Um valor sobe de 80 para 100. Qual foi o aumento percentual?|25%|20%|10%|30%|Aumento de 20 sobre 80: 20/80 = 25%.
+Fatorando, x² − 9 é igual a:|(x − 3)(x + 3)|(x − 3)²|(x + 3)²|x(x − 9)|Diferença de quadrados: a² − b² = (a − b)(a + b).
+Qual é o resto da divisão de x² + 1 por x − 1?|2|1|0|−1|Teorema do resto: P(1) = 1 + 1 = 2.
+Qual é o valor de sen²x + cos²x?|1|0|2|sen 2x|Relação fundamental da trigonometria.
+Qual é o período da função y = sen x?|2π|π|π/2|4π|A função se repete a cada 2π.
+Se sen α = 3/5 (α agudo), qual é cos α?|4/5|3/4|5/3|2/5|cos²α = 1 − 9/25 = 16/25, então cos α = 4/5.
+Qual é o domínio de f(x) = √(x − 2)?|x ≥ 2|x > 2|x ≤ 2|x ≥ 0|O radicando precisa ser maior ou igual a zero.
+Qual é o valor de log₃ 9 + log₂ 8?|5|6|4|11|2 + 3 = 5.
+Qual é a inversa de f(x) = 2x + 4?|(x − 4)/2|2x − 4|x/2 + 4|(x + 4)/2|De y = 2x + 4, x = (y − 4)/2.
+Se n(A) = 5, n(B) = 4 e n(A∩B) = 2, quanto é n(A∪B)?|7|9|11|6|5 + 4 − 2 = 7.
+Qual é a fração geratriz de 0,25?|1/4|1/5|2/5|25/10|25/100 = 1/4.
+Qual é a solução do sistema x + y = 7 e x − y = 1?|x = 4 e y = 3|x = 3 e y = 4|x = 5 e y = 2|x = 6 e y = 1|Somando as equações: 2x = 8, então x = 4 e y = 3.
+Qual é a área de um quadrado de diagonal 6√2 cm?|36 cm²|72 cm²|18 cm²|12 cm²|Lado = d/√2 = 6 cm, então área = 36 cm².
+Qual é a área de um setor de 90° em um círculo de raio 4?|4π|2π|8π|16π|(1/4)·π·16 = 4π.`),...((s,t)=>t.trim().split('\n').map(l=>{const[q,c,a,b,d,e]=l.split('|');return{s,q,o:[c,a,b,d],a:0,e,r:['Resolução|'+e]}}))('Física',`Qual é o valor aproximado da aceleração da gravidade na Terra?|9,8 m/s²|1,6 m/s²|98 m/s²|0,98 m/s²|Na superfície da Terra, g ≈ 9,8 m/s².
+A primeira lei de Newton também é chamada de lei da:|inércia|ação e reação|gravitação|conservação de energia|Sem força resultante, o corpo mantém o estado de movimento.
+Na 3ª lei de Newton, a força de reação tem:|mesmo módulo e sentido oposto|módulo maior|mesmo sentido|módulo menor|Ação e reação são iguais e opostas, em corpos diferentes.
+Um corpo de 4 kg tem energia cinética de 50 J. Qual a velocidade?|5 m/s|25 m/s|10 m/s|12,5 m/s|v = √(2·50/4) = √25 = 5 m/s.
+Um corpo é lançado para cima a 10 m/s (g = 10). Qual a altura máxima?|5 m|10 m|20 m|2 m|h = v²/2g = 100/20 = 5 m.
+Um corpo é lançado para cima a 20 m/s (g = 10). Quanto tempo leva para chegar ao ponto mais alto?|2 s|4 s|20 s|1 s|t = v/g = 20/10 = 2 s.
+Um corpo parte do repouso e atinge 30 m/s em 6 s. Qual a aceleração?|5 m/s²|180 m/s²|0,2 m/s²|24 m/s²|a = Δv/Δt = 30/6 = 5 m/s².
+Um corpo parte do repouso com a = 2 m/s². Que distância percorre em 5 s?|25 m|10 m|50 m|12,5 m|d = at²/2 = 2·25/2 = 25 m.
+Qual é a velocidade, em km/h, de 10 m/s?|36 km/h|10 km/h|3,6 km/h|100 km/h|Multiplica-se por 3,6: 10·3,6 = 36.
+Qual o consumo, em kWh, de um aparelho de 2 kW ligado por 3 h?|6 kWh|5 kWh|1,5 kWh|0,67 kWh|E = P·t = 2·3 = 6 kWh.
+Qual é a corrente de um chuveiro de 4400 W ligado em 220 V?|20 A|0,05 A|200 A|10 A|i = P/V = 4400/220 = 20 A.
+Dois resistores de 6 Ω em paralelo têm resistência equivalente de:|3 Ω|12 Ω|6 Ω|36 Ω|Req = 6·6/(6 + 6) = 3 Ω.
+Uma carga de 10 C passa por um fio em 5 s. Qual a corrente?|2 A|50 A|0,5 A|15 A|i = Q/t = 10/5 = 2 A.
+Qual a energia dissipada por um resistor de 10 Ω com 2 A em 3 s?|120 J|60 J|20 J|30 J|E = R·i²·t = 10·4·3 = 120 J.
+Qual lei relaciona a força elétrica com a distância entre cargas?|Lei de Coulomb|Lei de Ohm|Lei de Faraday|Lei de Lenz|F = k·q₁q₂/d².
+Se a distância entre duas cargas dobra, a força elétrica:|fica 4 vezes menor|fica 2 vezes menor|dobra|fica 4 vezes maior|F é inversamente proporcional a d².
+Uma onda de 340 m/s e 170 Hz tem comprimento de onda de:|2 m|0,5 m|57 800 m|1,7 m|λ = v/f = 340/170 = 2 m.
+Qual é a velocidade aproximada do som no ar?|340 m/s|3·10⁸ m/s|34 m/s|3400 m/s|A cerca de 20 °C, o som viaja a uns 340 m/s.
+O desvio da luz ao passar de um meio para outro é a:|refração|reflexão|difração|polarização|Muda a velocidade e a direção da luz.
+Uma lente convergente pode corrigir:|hipermetropia|miopia|daltonismo|catarata|A hipermetropia usa lentes convergentes.
+Num espelho côncavo, objeto além do centro de curvatura forma imagem:|real e invertida|virtual e direita|real e direita|virtual e invertida|A imagem é real, invertida e menor.
+Quantos kelvin correspondem a 27 °C?|300 K|246 K|273 K|327 K|K = °C + 273 = 300.
+Qual a temperatura em °C equivalente a 50 °F?|10 °C|18 °C|22 °C|0 °C|C = (F − 32)·5/9 = 18·5/9 = 10.
+Em um gás ideal a volume constante, se a temperatura absoluta dobra, a pressão:|dobra|cai pela metade|quadruplica|não muda|P/T é constante.
+O calor latente é o calor necessário para:|mudar o estado sem mudar a temperatura|aumentar a temperatura|diminuir a pressão|dilatar o corpo|Q = m·L, durante a mudança de estado.
+Um corpo recebe 200 cal e sua temperatura sobe 10 °C. Qual a capacidade térmica?|20 cal/°C|2000 cal/°C|210 cal/°C|0,05 cal/°C|C = Q/ΔT = 200/10 = 20 cal/°C.
+Uma máquina térmica recebe 500 J e realiza 100 J de trabalho. O rendimento é:|20%|5%|80%|50%|η = 100/500 = 20%.
+Um corpo de 3 kg a 4 m/s tem quantidade de movimento:|12 kg·m/s|7 kg·m/s|0,75 kg·m/s|48 kg·m/s|p = m·v = 3·4 = 12 kg·m/s.
+Um impulso de 20 N·s em um corpo de 5 kg parado dá a ele velocidade de:|4 m/s|100 m/s|0,25 m/s|15 m/s|I = m·Δv, então v = 20/5 = 4 m/s.
+Qual a velocidade angular de um disco a 30 rpm, em rad/s?|π|30|2π|60π|30 rpm = 0,5 Hz, então ω = 2π·0,5 = π rad/s.
+Qual a aceleração centrípeta de um corpo a 4 m/s em círculo de raio 2 m?|8 m/s²|2 m/s²|16 m/s²|0,5 m/s²|a = v²/r = 16/2 = 8 m/s².
+A lei da gravitação universal diz que a força é proporcional às massas e:|inversamente ao quadrado da distância|diretamente à distância|à soma das massas|à raiz da distância|F = G·M·m/d².
+O empuxo sobre um corpo totalmente imerso depende do:|volume deslocado e da densidade do líquido|peso do corpo|material do recipiente|formato do recipiente|E = ρ·V·g.
+Um corpo de 0,002 m³ imerso na água (ρ = 1000 kg/m³, g = 10) sofre empuxo de:|20 N|2 N|200 N|0,2 N|E = 1000·0,002·10 = 20 N.
+Qual a pressão devida à coluna de água a 10 m de profundidade (ρ = 1000, g = 10)?|10⁵ Pa|10⁴ Pa|10³ Pa|10⁶ Pa|P = ρgh = 1000·10·10 = 10⁵ Pa.
+Na prensa hidráulica, com êmbolos de 2 cm² e 10 cm², uma força de 10 N no menor produz no maior:|50 N|2 N|10 N|100 N|F₂ = F₁·A₂/A₁ = 10·10/2 = 50 N.
+Qual o torque de uma força de 10 N a 0,5 m do eixo?|5 N·m|20 N·m|10 N·m|0,5 N·m|M = F·d = 10·0,5 = 5 N·m.
+Uma alavanca está em equilíbrio com 20 N a 1 m do apoio. Que força a 2 m a equilibra?|10 N|40 N|20 N|5 N|20·1 = F·2, então F = 10 N.
+Uma mola com k = 200 N/m é esticada 0,1 m. Qual a força elástica?|20 N|2 N|2000 N|0,5 N|F = k·x = 200·0,1 = 20 N.
+Qual a energia elástica de uma mola com k = 200 N/m e x = 0,1 m?|1 J|2 J|20 J|0,1 J|E = k·x²/2 = 200·0,01/2 = 1 J.
+Um bloco de 10 kg (g = 10) desliza com μ = 0,3. Qual o atrito cinético?|30 N|3 N|100 N|0,3 N|N = 100 N, então f = 0,3·100 = 30 N.
+Um corpo desce um plano inclinado de 30° sem atrito (g = 10). Qual a aceleração?|5 m/s²|10 m/s²|8,7 m/s²|2,5 m/s²|a = g·sen 30° = 10·0,5 = 5 m/s².
+Se a velocidade de um corpo dobra, sua energia cinética:|quadruplica|dobra|fica pela metade|não muda|Ec é proporcional a v².
+Um corpo de 2 kg cai de 5 m (g = 10), sem atrito. Qual a velocidade ao chegar ao solo?|10 m/s|5 m/s|50 m/s|20 m/s|v = √(2gh) = √100 = 10 m/s.
+Um carro de 1000 kg freia de 20 m/s até parar. Qual o trabalho do freio?|−200 000 J|200 000 J|−20 000 J|−2000 J|W = ΔEc = 0 − 1000·400/2 = −200 000 J.
+No gráfico velocidade × tempo, a área sob a curva representa:|o deslocamento|a aceleração|a força|a energia|Área sob v × t = deslocamento.
+Dois carros se aproximam em sentidos opostos, a 20 m/s e 30 m/s. A velocidade relativa é:|50 m/s|10 m/s|25 m/s|600 m/s|Em sentidos opostos, as velocidades se somam.
+No lançamento oblíquo sem atrito, o alcance é máximo para o ângulo de:|45°|30°|60°|90°|O alcance é proporcional a sen 2θ, máximo em 45°.
+Um transformador ideal tem 100 espiras no primário e 50 no secundário. Com 220 V no primário, o secundário tem:|110 V|440 V|220 V|55 V|V₂ = 220·50/100 = 110 V.
+A meia-vida de um elemento é de 10 dias. Após 20 dias, resta que fração?|1/4|1/2|1/8|1/10|São duas meias-vidas: (1/2)² = 1/4.`));
+
+let W=20,Wm=null;
+const L={g:1,a:1,b:0,c:0,d:0,x:2,u:true},sx=x=>200+200/W*x,sy=y=>200-200/W*y,fm=n=>(Math.round(n*100)/100).toString().replace('.',',').replace('-','−'),fv=x=>L.g===1?L.a*x+L.b:L.g===2?(L.a*x+L.b)*x+L.c:((L.a*x+L.b)*x+L.c)*x+L.d;
+const z=v=>Math.abs(v)<1e-9?0:v;
+function croots(a,b,c,d){
+  const f=x=>((a*x+b)*x+c)*x+d,R=1+Math.max(Math.abs(b),Math.abs(c),Math.abs(d))/Math.abs(a),Dp=z(4*b*b-12*a*c);
+  let pts=[-R,R];
+  if(Dp>0){const s=Math.sqrt(Dp);pts=[-R,...[(-2*b-s)/(6*a),(-2*b+s)/(6*a)].sort((p,q)=>p-q),R]}
+  else if(Dp===0)pts=[-R,-b/(3*a),R];
+  const out=[],add=r=>{if(!out.some(o=>Math.abs(o-r)<1e-6))out.push(r)};
+  for(let k=1;k<pts.length-1;k++)if(Math.abs(f(pts[k]))<1e-9)add(pts[k]);
+  for(let k=0;k<pts.length-1;k++){
+    let lo=pts[k],hi=pts[k+1];const fl=f(lo),fh=f(hi);
+    if(fl*fh<0){for(let n=0;n<100;n++){const m=(lo+hi)/2;if(f(m)*fl>0)lo=m;else hi=m}add((lo+hi)/2)}
+  }
+  return out.sort((p,q)=>p-q);
+}
+function eq(){const t=L.g===1?[[L.a,'x'],[L.b,'']]:L.g===2?[[L.a,'x²'],[L.b,'x'],[L.c,'']]:[[L.a,'x³'],[L.b,'x²'],[L.c,'x'],[L.d,'']];let s='',f=1;t.forEach(([k,v])=>{if(!k)return;const n=(Math.abs(k)===1&&v)?'':fm(Math.abs(k));s+=f?(k<0?'−':'')+n+v:(k<0?' − ':' + ')+n+v;f=0});return 'f(x) = '+(s||'0')}
+function autoW(){
+  const {a,b,c,d,x,u,g}=L,m=[],add=(p,q)=>m.push(Math.abs(p),Math.abs(q));
+  if(g===1){if(a!==0)add(-b/a,0);add(0,b)}
+  else if(g===2){if(a!==0){const D=b*b-4*a*c,xv=-b/(2*a);add(xv,fv(xv));if(D>=0){const s=Math.sqrt(D);add((-b-s)/(2*a),0);add((-b+s)/(2*a),0)}}add(0,c)}
+  else{add(0,d);if(a!==0){const xi=-b/(3*a),Dp=z(4*b*b-12*a*c);add(xi,fv(xi));croots(a,b,c,d).forEach(r=>add(r,0));if(Dp>0){const s=Math.sqrt(Dp);[(-2*b-s)/(6*a),(-2*b+s)/(6*a)].forEach(p=>add(p,fv(p)))}}}
+  if(u)add(x,0);
+  const mx=Math.max(0,...m.filter(isFinite))*1.15;
+  return [20,50,100,200,500,1000,2000,5000,1e4,2e4,5e4,1e5,1e6,1e7].find(n=>n>=mx)||1e7;
+}
+
+function zeros(){
+  const {a,b,c,d}=L;
+  if(L.g===3){if(a===0)return '';const rs=croots(a,b,c,d);return rs.length===1?'f(x) = 0 para x = '+fm(rs[0]):'f(x) = 0 para x = '+rs.slice(0,-1).map(fm).join(', x = ')+' e x = '+fm(rs[rs.length-1])}
+  if(L.g===1)return a===0?(b===0?'f(x) = 0 para todo x real.':'f(x) = 0 não tem solução: f(x) vale sempre '+fm(b)+'.'):'f(x) = 0 para x = '+fm(-b/a);
+  if(a===0)return '';
+  const D=b*b-4*a*c,s=Math.sqrt(D),r1=(-b-s)/(2*a),r2=(-b+s)/(2*a);
+  return D<0?'f(x) = 0 não tem solução real (Δ < 0).':D===0?'f(x) = 0 para x = '+fm(-b/(2*a)):'f(x) = 0 para x = '+fm(Math.min(r1,r2))+' e x = '+fm(Math.max(r1,r2));
+}
+
+function steps(){
+  const {a,b,c,d,x}=L,pr=n=>n<0?'('+fm(n)+')':fm(n),S=[];
+  const ev=L.g===1?['f(x) = a·x + b','f('+fm(x)+') = '+pr(a)+' · '+pr(x)+' + '+pr(b),'f('+fm(x)+') = '+pr(a*x)+' + '+pr(b)+' = '+fm(fv(x))]:L.g===3?['f(x) = ax³ + bx² + cx + d','f('+fm(x)+') = '+pr(a)+' · '+pr(x)+'³ + '+pr(b)+' · '+pr(x)+'² + '+pr(c)+' · '+pr(x)+' + '+pr(d),'f('+fm(x)+') = '+pr(a*x*x*x)+' + '+pr(b*x*x)+' + '+pr(c*x)+' + '+pr(d)+' = '+fm(fv(x))]:['f(x) = ax² + bx + c','f('+fm(x)+') = '+pr(a)+' · '+pr(x)+'² + '+pr(b)+' · '+pr(x)+' + '+pr(c),'f('+fm(x)+') = '+pr(a*x*x)+' + '+pr(b*x)+' + '+pr(c)+' = '+fm(fv(x))];
+  if(L.g===1){
+    S.push(['Identifique os coeficientes',[eq(),'a = '+fm(a)+' (coeficiente angular) e b = '+fm(b)+' (coeficiente linear)']]);
+    if(a===0)S.push(['Analise a função',['Como a = 0, f(x) = '+fm(b)+' para qualquer x: é uma função constante, sem raiz (a menos que b = 0).']]);
+    else{
+      S.push(['Ache a raiz (f(x) = 0)',['a·x + b = 0',pr(a)+'·x + '+pr(b)+' = 0',pr(a)+'·x = '+fm(-b),'x = '+fm(-b)+' / '+pr(a)+' = '+fm(-b/a)]]);
+      S.push(['Veja o crescimento',[a>0?'a = '+fm(a)+' > 0: a reta sobe, função crescente.':'a = '+fm(a)+' < 0: a reta desce, função decrescente.']]);
+    }
+    S.push(['Ache onde corta o eixo y',['f(0) = a·0 + b = b','f(0) = '+fm(b)]]);
+  }else if(L.g===3){
+    if(a===0)return [['Atenção',['Com a = 0 a função deixa de ser do 3º grau. Mova a barra do a para um valor diferente de zero.']]];
+    const rs=croots(a,b,c,d),Dp=z(4*b*b-12*a*c),xi=-b/(3*a),R=[];
+    S.push(['Identifique os coeficientes',[eq(),'a = '+fm(a)+', b = '+fm(b)+', c = '+fm(c)+' e d = '+fm(d)]]);
+    const nice=rs.find(r=>Math.abs(r*2-Math.round(r*2))<1e-7);
+    if(nice!==undefined){
+      const r0=Math.round(nice*2)/2,q1=a,q2=b+r0*q1,q3=c+r0*q2,rem=d+r0*q3,Dq=z(q2*q2-4*q1*q3),lin=r0<0?'(x + '+fm(-r0)+')':r0>0?'(x − '+fm(r0)+')':'x';
+      R.push('Procure uma raiz simples testando valores de x (comece pelos divisores de d).','Testando x = '+fm(r0)+': f('+fm(r0)+') = '+fm(z(fv(r0)))+'. Então '+fm(r0)+' é raiz e f(x) = '+lin+' · (quociente).');
+      R.push('Divisão de Briot-Ruffini por '+lin+' (coeficientes: '+[a,b,c,d].map(fm).join(', ')+'):','quociente: '+fm(q1)+'x² + '+pr(q2)+'x + '+pr(q3)+', resto = '+fm(z(rem))+' (zero, como esperado).');
+      R.push('Resolva '+fm(q1)+'x² + '+pr(q2)+'x + '+pr(q3)+' = 0: Δ = '+pr(q2)+'² − 4·'+pr(q1)+'·'+pr(q3)+' = '+fm(Dq));
+      if(Dq<0)R.push('Como Δ < 0, o quociente não tem raízes reais: a única raiz real é x = '+fm(r0)+'.');
+      else if(Dq===0)R.push('Como Δ = 0: x = '+fm(-q2/(2*q1))+' (raiz dupla).');
+      else{const sq=Math.sqrt(Dq);R.push('x = ('+pr(-q2)+' ± '+(Number.isInteger(sq)?fm(sq):'√'+fm(Dq)+' ≈ '+fm(sq))+') / '+pr(2*q1),'x₁ = '+fm((-q2-sq)/(2*q1))+' e x₂ = '+fm((-q2+sq)/(2*q1)))}
+      R.push('Raízes reais: '+rs.map(r=>'x = '+fm(r)).join('; '));
+    }else R.push('Não há raiz simples (inteira ou meio-inteira) para testar. Nesse caso as raízes são encontradas por métodos numéricos ou lidas no gráfico.','Raízes reais aproximadas: '+rs.map(r=>'x ≈ '+fm(r)).join('; '));
+    S.push(['Ache as raízes (f(x) = 0)',R]);
+    const C=['f′(x) = 3a·x² + 2b·x + c','f′(x) = '+fm(3*a)+'x² + '+pr(2*b)+'x + '+pr(c),'Δ′ = (2b)² − 4·(3a)·c = '+fm(Dp)];
+    if(Dp>0){
+      const sq=Math.sqrt(Dp),p1=(-2*b-sq)/(6*a),p2=(-2*b+sq)/(6*a),lo=Math.min(p1,p2),hi=Math.max(p1,p2),mx=a>0?lo:hi,mn=a>0?hi:lo;
+      C.push('x = (−2b ± √Δ′) / (6a) = '+fm(p1)+' e '+fm(p2),'Máximo local: ('+fm(mx)+'; '+fm(fv(mx))+')','Mínimo local: ('+fm(mn)+'; '+fm(fv(mn))+')',a>0?'Como a > 0, o ponto de menor x é o máximo e o de maior x é o mínimo.':'Como a < 0, o ponto de menor x é o mínimo e o de maior x é o máximo.');
+    }else C.push(Dp===0?'Δ′ = 0: f′(x) = 0 só em x = '+fm(xi)+', sem trocar de sinal. Não há máximo nem mínimo local.':'Δ′ < 0: f′(x) nunca é zero, então a função é sempre '+(a>0?'crescente.':'decrescente.')+' Não há máximo nem mínimo local.');
+    S.push(['Ache os pontos de máximo e mínimo (derivada)',C]);
+    S.push(['Ache o ponto de inflexão',['f″(x) = 6a·x + 2b','6·'+pr(a)+'·x + 2·'+pr(b)+' = 0','x = '+fm(-2*b)+' / '+pr(6*a)+' = '+fm(xi),'f('+fm(xi)+') = '+fm(fv(xi)),'Inflexão em ('+fm(xi)+'; '+fm(fv(xi))+'): ali a concavidade muda de lado.']]);
+    S.push(['Ache onde corta o eixo y',['f(0) = a·0³ + b·0² + c·0 + d = d','f(0) = '+fm(d)]]);
+    S.push(['Veja o comportamento nas pontas',[a>0?'a > 0: quando x → −∞, f(x) → −∞; quando x → +∞, f(x) → +∞.':'a < 0: quando x → −∞, f(x) → +∞; quando x → +∞, f(x) → −∞.']]);
+  }else if(a===0){
+    return [['Atenção',['Com a = 0 a função deixa de ser do 2º grau (vira f(x) = bx + c). Mova a barra do a para um valor diferente de zero.']]];
+  }else{
+    const D=b*b-4*a*c,sr=Math.sqrt(D),srt=Number.isInteger(sr)?fm(sr):'≈ '+fm(sr),xv=-b/(2*a),yv=-D/(4*a);
+    S.push(['Identifique os coeficientes',[eq(),'a = '+fm(a)+', b = '+fm(b)+' e c = '+fm(c)]]);
+    S.push(['Calcule o discriminante (Δ)',['Δ = b² − 4·a·c','Δ = '+pr(b)+'² − 4·'+pr(a)+'·'+pr(c),'Δ = '+fm(b*b)+' − '+pr(4*a*c),'Δ = '+fm(D)]]);
+    const r=['x = (−b ± √Δ) / (2·a)'];
+    if(D<0)r.push('Como Δ < 0, √Δ não é real: não há raízes reais e o gráfico não toca o eixo x.');
+    else{
+      r.push('x = ('+pr(-b)+' ± √'+fm(D)+') / (2·'+pr(a)+')','x = ('+pr(-b)+' ± '+srt+') / '+pr(2*a));
+      if(D===0)r.push('Como Δ = 0, há uma raiz: x = '+fm(xv));
+      else r.push('x₁ = '+fm(-b-sr)+' / '+pr(2*a)+' = '+fm((-b-sr)/(2*a)),'x₂ = '+fm(-b+sr)+' / '+pr(2*a)+' = '+fm((-b+sr)/(2*a)));
+    }
+    S.push(['Ache as raízes (Bhaskara)',r]);
+    S.push(['Ache o vértice',['xᵥ = −b / (2a) = '+fm(-b)+' / '+pr(2*a)+' = '+fm(xv),'yᵥ = −Δ / (4a) = '+fm(-D)+' / '+pr(4*a)+' = '+fm(yv),'V = ('+fm(xv)+'; '+fm(yv)+')',a>0?'Como a > 0, a parábola abre para cima e V é o ponto mínimo.':'Como a < 0, a parábola abre para baixo e V é o ponto máximo.']]);
+    S.push(['Ache onde corta o eixo y',['f(0) = a·0² + b·0 + c = c','f(0) = '+fm(c)]]);
+  }
+  S.push(L.u?['Calcule f(x) para o x escolhido',ev]:['Para quais valores de x f(x) = 0?',[zeros()]]);
+  return S;
+}
+function openCalc(){
+  $('mt').textContent='Resolução: '+eq();
+  $('mbody').innerHTML='<ol>'+steps().map(([t,l])=>'<li><b>'+t+'</b>'+l.map(s=>'<div class=\'cl\'>'+s+'</div>').join('')+'</li>').join('')+'</ol>';
+  $('modal').classList.remove('hide');$('mx').focus();
+}
+
+/* ===== CENA 3D ===== */
+const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const S=new THREE.Scene(),BG=0x070b1f;S.background=new THREE.Color(BG);S.fog=new THREE.FogExp2(BG,.02);
+const cam=new THREE.PerspectiveCamera(55,1,.1,400);
+S.add(new THREE.AmbientLight(0x8899ff,.6));
+const P1=new THREE.PointLight(0x4f7bff,2.4,80),P2=new THREE.PointLight(0xff7a3c,2.4,80);P1.position.set(-9,6,4);P2.position.set(9,-3,4);S.add(P1,P2);
+const stars=(()=>{const n=2400,a=new Float32Array(n*3);for(let i=0;i<n;i++){const r=70+Math.random()*90,t=Math.random()*6.283,p=Math.acos(2*Math.random()-1);a.set([r*Math.sin(p)*Math.cos(t),r*Math.sin(p)*Math.sin(t),r*Math.cos(p)],i*3)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));const s=new THREE.Points(g,new THREE.PointsMaterial({size:.4,color:0xbcd0ff,fog:false}));S.add(s);return s})();
+const grid=new THREE.GridHelper(140,70,0x4f7bff,0x1b2c66);grid.position.y=-7;grid.material.transparent=true;grid.material.opacity=.45;S.add(grid);
+function label(t,col,sc){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.font='800 110px "Bricolage Grotesque",sans-serif';x.textAlign='center';x.textBaseline='middle';x.shadowColor=col;x.shadowBlur=24;x.fillStyle=col;x.fillText(t,128,128);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,opacity:.85,depthWrite:false}));s.scale.set(sc,sc,1);return s}
+const DEC=new THREE.Group();S.add(DEC);
+const geos=[new THREE.IcosahedronGeometry(1,0),new THREE.OctahedronGeometry(1.1),new THREE.TetrahedronGeometry(1.2),new THREE.DodecahedronGeometry(1),new THREE.TorusKnotGeometry(.7,.22,90,12),new THREE.TorusGeometry(.9,.25,12,32),new THREE.BoxGeometry(1.4,1.4,1.4),new THREE.ConeGeometry(.9,1.6,5)],items=[];
+for(let i=0;i<20;i++){const h=i%2?.6:.07,m=new THREE.Mesh(geos[i%8],new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(h,.8,.55),emissive:new THREE.Color().setHSL(h,.9,.22),metalness:.5,roughness:.3}));
+const w=new THREE.Mesh(geos[i%8],new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.22}));w.scale.setScalar(1.08);m.add(w);
+const a=i/20*6.283,r=9+Math.random()*9;m.position.set(Math.cos(a)*r*1.2,(Math.random()-.5)*11,-9-Math.abs(Math.sin(a))*r);m.scale.setScalar(.8+Math.random()*1.3);m.userData={sp:.2+Math.random()*.6,ph:Math.random()*6,by:m.position.y};DEC.add(m);items.push(m)}
+['π','∑','∫','√x','Δ','F = ma','E = mc²','sen θ','log','∞','x² + y²','v = d/t','λ','Ω'].forEach((t,i)=>{const s=label(t,i%2?'#ff9a62':'#7ea2ff',3.5);const a=i*2.4;s.position.set(Math.cos(a)*13,(Math.random()-.5)*12,-6-Math.random()*14);s.userData={by:s.position.y,ph:i};DEC.add(s);items.push(s)});
+const core=new THREE.Group();core.position.set(0,0,-9);DEC.add(core);
+const cw=new THREE.Mesh(new THREE.IcosahedronGeometry(3.2,1),new THREE.MeshBasicMaterial({color:0x4f7bff,wireframe:true,transparent:true,opacity:.5})),cs=new THREE.Mesh(new THREE.SphereGeometry(1.5,32,32),new THREE.MeshBasicMaterial({color:0x4f7bff,transparent:true,opacity:.9}));core.add(cw,cs);
+const orb=[0,1,2].map(i=>{const t=new THREE.Mesh(new THREE.TorusGeometry(4+i*.6,.04,8,90),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.35}));t.rotation.set(i*1.1,i*.7,0);core.add(t);return t});
+const tc=new THREE.Color(0x4f7bff);let flash=0,spin=0,shake=0,tleft=45,tcur=0;
+const RING=new THREE.Group();RING.position.set(0,0,-9);S.add(RING);const bm0=new THREE.MeshBasicMaterial({color:0x4f7bff}),beads=[];
+for(let i=0;i<48;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.15,10,10),bm0),a=-i/48*6.283+1.5708;b.position.set(Math.cos(a)*5.6,Math.sin(a)*5.6,0);RING.add(b);beads.push(b)}
+const NB=260,bp=new Float32Array(NB*3),bv=new Float32Array(NB*3),bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.BufferAttribute(bp,3));
+const bm=new THREE.PointsMaterial({size:.5,color:0x5ad08a,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}),bpts=new THREE.Points(bg,bm);bpts.frustumCulled=false;S.add(bpts);let bt=0;
+function burst(col){bm.color.set(col);bt=1;for(let i=0;i<NB;i++){bp.set([0,0,-7],i*3);const v=new V3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize().multiplyScalar(4+Math.random()*12);bv.set([v.x,v.y,v.z],i*3)}}
+const TW=new THREE.Group();TW.position.set(-8.5,-5,-5);S.add(TW);
+function tower(n){n=Math.min(n,14);while(TW.children.length>n)TW.remove(TW.children[TW.children.length-1]);while(TW.children.length<n){const k=TW.children.length,m=new THREE.Mesh(new THREE.BoxGeometry(1.6,.5,1.6),new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(.08+k*.04,.95,.55),emissive:new THREE.Color().setHSL(.08+k*.04,1,.3)}));m.position.y=k*.6;m.scale.setScalar(.01);TW.add(m)}}
+/* ----- plot 3D ----- */
+const PL=new THREE.Group();PL.visible=false;S.add(PL);
+const ax=(a,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(-a[0],-a[1],-a[2]),new V3(...a)]),new THREE.LineBasicMaterial({color:c}));
+PL.add(ax([10.6,0,0],0xff7a7a),ax([0,10.6,0],0x7aff9b),ax([0,0,10.6],0x7ea2ff));
+const g2=new THREE.GridHelper(20,20,0x3355aa,0x1d2a5a);g2.rotation.x=Math.PI/2;PL.add(g2);const g3=new THREE.GridHelper(20,20,0x2a3a78,0x16204a);g3.position.y=-10;PL.add(g3);
+[['x',11.6,0,0,'#ff7a7a'],['y',0,11.6,0,'#7aff9b'],['z',0,0,11.6,'#7ea2ff']].forEach(([t,x,y,z,c])=>{const s=label(t,c,1.6);s.position.set(x,y,z);PL.add(s)});
+const CV=new THREE.Group();PL.add(CV);const pulse=new THREE.Mesh(new THREE.SphereGeometry(.2,16,16),new THREE.MeshBasicMaterial({color:0xffffff}));PL.add(pulse);
+const MC=new THREE.MeshStandardMaterial({color:0x7ea2ff,emissive:0x2f5bd6,emissiveIntensity:.9,metalness:.3,roughness:.3}),MS=new THREE.MeshStandardMaterial({color:0x7ea2ff,emissive:0x1a2f8a,transparent:true,opacity:.35,side:THREE.DoubleSide}),MW=new THREE.MeshBasicMaterial({color:0xaec4ff,wireframe:true,transparent:true,opacity:.22}),MF=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:.8,roughness:.5});
+const SG=new THREE.SphereGeometry(1,20,20),MM={};const mk=c=>MM[c]||(MM[c]=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.7}));
+let vmode=0,dirty=true,cpts=[];
+function kp(){const {a,b,c,d}=L,r=[],p=[];
+if(L.g===1){if(a)r.push(-b/a);p.push([0,b])}
+else if(L.g===2){if(a){const D=b*b-4*a*c,xv=-b/(2*a);if(D>=0){const s=Math.sqrt(D);r.push((-b-s)/(2*a));if(D>0)r.push((-b+s)/(2*a))}p.push([xv,fv(xv)])}p.push([0,c])}
+else if(a){croots(a,b,c,d).forEach(v=>r.push(v));const Dp=z(4*b*b-12*a*c);if(Dp>0){const s=Math.sqrt(Dp);[(-2*b-s)/(6*a),(-2*b+s)/(6*a)].forEach(v=>p.push([v,fv(v)]))}const xi=-b/(3*a);p.push([xi,fv(xi)],[0,d])}
+return{r,p}}
+function rebuild(){
+for(const o of [...CV.children]){CV.remove(o);if(!o.userData.keep&&o.geometry)o.geometry.dispose()}
+const k=10/W,N=240,cl=v=>Math.max(-1.3*W,Math.min(1.3*W,v));cpts=[];
+for(let i=0;i<=N;i++){const x=-W+2*W*i/N;cpts.push(new V3(x*k,cl(fv(x))*k,0))}
+CV.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cpts),N,.1,8),MC));
+if(vmode===1){const lg=new THREE.LatheGeometry(cpts.map(p=>new THREE.Vector2(Math.abs(p.y),p.x)),56);[MS,MW].forEach(m=>{const o=new THREE.Mesh(lg,m);o.rotation.z=-Math.PI/2;o.userData.keep=m===MW;CV.add(o)})}
+if(vmode===2){const nz=18,pos=[],col=[],idx=[];for(let i=0;i<=N;i++)for(let j=0;j<=nz;j++){const p=cpts[i];pos.push(p.x,p.y,(j/nz-.5)*10);const c=new THREE.Color().setHSL(.62-.55*(p.y+13)/26,.8,.55);col.push(c.r,c.g,c.b)}
+for(let i=0;i<N;i++)for(let j=0;j<nz;j++){const a=i*(nz+1)+j;idx.push(a,a+1,a+nz+1,a+1,a+nz+2,a+nz+1)}
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();CV.add(new THREE.Mesh(g,MF));const w=new THREE.Mesh(g,MW);w.userData.keep=true;CV.add(w)}
+const sp=(x,y,c,r)=>{if(Math.abs(y*k)>10.6||Math.abs(x*k)>10.6)return;const m=new THREE.Mesh(SG,mk(c));m.scale.setScalar(r);m.position.set(x*k,y*k,0);m.userData.keep=true;CV.add(m)},K=kp();
+K.r.forEach(x=>sp(x,0,0x5ad08a,.28));K.p.forEach(q=>sp(q[0],q[1],0xff9a62,.28));
+if(L.u){const y=fv(L.x);sp(L.x,y,0xffffff,.34);const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(L.x*k,0,0),new V3(L.x*k,cl(y)*k,0)]),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.5}));CV.add(l)}
+}
+function info(){const{a}=L,o=[];if(L.g!==1&&a===0)return['Com a = 0 deixa de ser desse grau. Tire o a do zero.'];
+if(L.g===1)o.push(a===0?'Função constante.':a>0?'a > 0: crescente.':'a < 0: decrescente.');else if(L.g===2)o.push('Concavidade para '+(a>0?'cima':'baixo')+' · Δ = '+fm(L.b*L.b-4*a*L.c));else o.push(a>0?'a > 0: vem de −∞ e vai a +∞.':'a < 0: vem de +∞ e vai a −∞.');
+o.push(zeros()||'Sem raízes.');const K=kp();o.push('Pontos laranja: '+K.p.map(q=>'('+fm(q[0])+'; '+fm(q[1])+')').join(' · '));return o}
+function upd(){['a','b','c','d','x'].forEach(k=>{$('o'+k).textContent=fm(L[k]);$('r'+k).value=L[k]});$('fx').textContent=eq();
+$('ev').textContent=L.u?'Para x = '+fm(L.x)+', f(x) = '+fm(fv(L.x)):'Marque o x para calcular f(x).';$('info').innerHTML=info().map(s=>'<li>'+s+'</li>').join('');dirty=true}
+/* ===== CÂMERA / LOOP ===== */
+let view='menu',px=0,py=0,th=.6,ph=1.25,rad=24,tth=.6,tph=1.25,trad=24,idle=0,drag=0;const look=new V3(0,0,-6),tgt=new V3();
+function fit(){const w=innerWidth,h=innerHeight;R.setSize(w,h);cam.aspect=w/h;if(view==='lab'){if(w<900)cam.setViewOffset(w,h,0,h*.2,w,h);else cam.setViewOffset(w,h,w*.1,0,w,h)}else cam.clearViewOffset();cam.updateProjectionMatrix()}
+addEventListener('resize',fit);
+function setView(v){view=v;const lab=v==='lab';DEC.visible=!lab;grid.visible=!lab;RING.visible=v==='game';TW.visible=v==='game'||v==='end';PL.visible=lab;fit();dirty=true}
+function theme(s){tc.set(s==='Física'?0xff7a3c:0x4f7bff);bm0.color.copy(tc)}
+const clk=new THREE.Clock(),RED=new THREE.Color(0xff5a5a);
+function loop(){requestAnimationFrame(loop);const dt=Math.min(.05,clk.getDelta()),t=clk.elapsedTime;stars.rotation.y+=dt*.01;
+if(view!=='lab'){items.forEach(m=>{const u=m.userData;if(m.isMesh){m.rotation.x+=dt*u.sp;m.rotation.y+=dt*u.sp*.7;m.position.y=u.by+Math.sin(t*u.sp+u.ph)*.8}else m.position.y=u.by+Math.sin(t*.6+u.ph)*.7});
+core.rotation.y+=dt*(.3+spin);core.rotation.x+=dt*.15;spin*=.97;orb.forEach((o,i)=>o.rotation.z+=dt*(.4+i*.3));
+cw.material.color.lerp(tc,.05);cs.material.color.lerp(tc,.04);flash*=.92;cs.scale.setScalar(1+.12*Math.sin(t*2)+flash*.7);
+if(view==='game'){const n=Math.ceil(Math.max(0,tleft)/45*48);beads.forEach((b,i)=>b.visible=i<n);bm0.color.copy(tleft<10?RED:tc);RING.rotation.z=Math.sin(t*.5)*.1;RING.rotation.y=Math.sin(t*.4)*.35}
+TW.children.forEach(m=>{m.scale.setScalar(m.scale.x+(1-m.scale.x)*.15);m.rotation.y+=dt})}
+if(bt>0){bt-=dt*.7;bm.opacity=Math.max(0,bt);for(let i=0;i<NB*3;i++)bp[i]+=bv[i]*dt;bg.attributes.position.needsUpdate=true}
+if(view==='lab'){if(!drag&&idle<=0)tth+=dt*.1;else idle-=dt;th+=(tth-th)*.12;ph+=(tph-ph)*.12;rad+=(trad-rad)*.12;
+tgt.set(rad*Math.sin(ph)*Math.sin(th),rad*Math.cos(ph),rad*Math.sin(ph)*Math.cos(th));look.lerp(new V3(0,0,0),.1);
+const wt=Wm||autoW(),nw=Math.exp(Math.log(W)+(Math.log(wt)-Math.log(W))*.08);if(Math.abs(nw/W-1)>.0006){W=nw;dirty=true}else if(W!==wt){W=wt;dirty=true}
+if(dirty){rebuild();dirty=false;$('vw').textContent='Vista: ±'+fm(Math.round(W*10)/10)}
+if(cpts.length)pulse.position.copy(cpts[Math.floor((t*.12%1)*240)])}
+else{const bz=view==='game'?10:view==='end'?13:14;tgt.set(px*2.2,1.2+py*1.2,bz);look.lerp(new V3(0,0,-6),.1)}
+cam.position.lerp(tgt,view==='lab'?.12:.05);if(shake>.01){cam.position.x+=(Math.random()-.5)*shake;cam.position.y+=(Math.random()-.5)*shake;shake*=.9}
+cam.lookAt(look);R.render(S,cam)}
+/* ----- entrada ----- */
+addEventListener('pointermove',e=>{px=(e.clientX/innerWidth-.5)*2;py=-(e.clientY/innerHeight-.5)*2;const s=document.documentElement.style;s.setProperty('--rx',(py*3)+'deg');s.setProperty('--ry',(px*4)+'deg')});
+const cvs=$('c');let lx=0,ly=0;
+cvs.addEventListener('pointerdown',e=>{drag=1;lx=e.clientX;ly=e.clientY;cvs.setPointerCapture(e.pointerId)});
+cvs.addEventListener('pointermove',e=>{if(!drag||view!=='lab')return;tth-=(e.clientX-lx)*.01;tph=Math.max(.15,Math.min(3,tph-(e.clientY-ly)*.01));lx=e.clientX;ly=e.clientY;idle=3});
+cvs.addEventListener('pointerup',()=>drag=0);cvs.addEventListener('pointercancel',()=>drag=0);
+cvs.addEventListener('wheel',e=>{if(view==='lab'){e.preventDefault();trad=Math.max(8,Math.min(45,trad*(1+e.deltaY*.001)))}},{passive:false});
+/* ----- som ----- */
+let AC,mute=false;function beep(f,d=.14,ty='sine'){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+$('snd').onclick=()=>{mute=!mute;$('snd').textContent=mute?'🔇':'🔊'};
+/* ===== QUIZ ===== */
+const T=45;let qs,qi,score,streak,best,hits,fh,timer,t0,locked,missed=[],mode='ambas',cur='start',tab='quiz',paused=0;
+const shuffle=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.random()*(k+1)|0;[a[k],a[j]]=[a[j],a[k]]}return a};
+function show(id){cur=id;['start','game','end'].forEach(s=>$(s).classList.toggle('hide',s!==id));if(tab==='quiz')setView(id==='start'?'menu':id)}
+function pick(){const M=shuffle(BANK.filter(q=>q.s==='Matemática')),F=shuffle(BANK.filter(q=>q.s==='Física'));if(mode==='mat')return M.slice(0,15);if(mode==='fis')return F.slice(0,15);const k=Math.random()<.5?8:7;return shuffle([...M.slice(0,k),...F.slice(0,15-k)])}
+function start(m){if(typeof m==='string')mode=m;qs=pick().map(q=>{const c=q.o[q.a],o=shuffle(q.o);return{...q,o,a:o.indexOf(c)}});missed=[];qi=0;score=0;streak=0;best=0;hits=0;fh=0;tower(0);show('game');render()}
+function render(){const q=qs[qi];locked=false;$('sub').textContent=q.s+' · '+(qi+1)+'/'+qs.length;$('sub').className='pill '+(q.s==='Física'?'fis':'mat');$('pts').textContent=score+' pts';$('streak').textContent=streak>1?'🔥 '+streak:'';
+$('prog').firstElementChild.style.width=(qi/qs.length*100)+'%';$('q').textContent=q.q;$('fb').innerHTML='';$('next').classList.add('hide');const o=$('opts');o.innerHTML='';
+q.o.forEach((t,k)=>{const b=document.createElement('button');b.className='opt';b.innerHTML='<b>'+(k+1)+'</b><span></span>';b.lastChild.textContent=t;b.onclick=()=>answer(k);o.appendChild(b)});
+t0=Date.now();theme(q.s);run()}
+function run(){clearInterval(timer);timer=setInterval(()=>{const l=T-(Date.now()-t0)/1000;tleft=l;$('time').firstElementChild.style.width=Math.max(0,l/T*100)+'%';$('time').classList.toggle('low',l<10);if(l<=0)answer(-1)},100)}
+function answer(k){if(locked)return;locked=true;clearInterval(timer);const q=qs[qi],left=Math.max(0,T-(Date.now()-t0)/1000),ok=k===q.a;
+[...$('opts').children].forEach((b,n)=>{b.disabled=true;if(n===q.a)b.classList.add('ok');else if(n===k)b.classList.add('bad')});let msg;
+if(ok){streak++;best=Math.max(best,streak);hits++;if(q.s==='Física')fh++;const g=100+Math.round(left*2)+(streak>1?(streak-1)*10:0);score+=g;msg='<strong>Correto! +'+g+' pontos</strong>';burst(0x5ad08a);cs.material.color.set(0x5ad08a);flash=1;spin=2+streak;tower(streak);beep(660);setTimeout(()=>beep(880),90)}
+else{streak=0;msg='<strong>'+(k<0?'O tempo acabou.':'Não foi dessa vez.')+'</strong>';burst(0xff5a5a);cs.material.color.set(0xff5a5a);flash=1;shake=.8;tower(0);missed.push(q);beep(140,.3,'sawtooth')}
+$('fb').innerHTML='<div class="fb '+(ok?'ok':'bad')+'">'+msg+q.e+'</div>';$('pts').textContent=score+' pts';$('streak').textContent=streak>1?'🔥 '+streak:'';$('time').classList.remove('low');
+const rb=document.createElement('button');rb.className='btn2'+(ok?'':' hot');rb.textContent=ok?'Ver a resolução':'Não entendeu? Ver resolução passo a passo';rb.onclick=()=>{rb.remove();solve($('fb'),q)};$('fb').appendChild(rb);
+$('next').textContent=qi===qs.length-1?'Ver resultado':'Próxima questão';$('next').classList.remove('hide');$('next').focus({preventScroll:true});$('next').scrollIntoView({behavior:'smooth',block:'nearest'})}
+function solve(box,q){const d=document.createElement('div');box.appendChild(d);let k=0;const b=document.createElement('button');b.className='btn2';const lab=()=>{b.textContent='Passo '+(k+1)+' de '+q.r.length+': '+q.r[k].split('|')[0]+' (toque para ver)'};
+b.onclick=()=>{const[t,x]=q.r[k].split('|'),p=document.createElement('div');p.className='step';p.innerHTML='<b></b><span></span>';p.firstChild.textContent=(k+1)+'. '+t;p.lastChild.textContent=x;d.insertBefore(p,b);p.scrollIntoView({behavior:'smooth',block:'nearest'});k++;
+if(k<q.r.length)lab();else{b.remove();const r=document.createElement('div');r.className='step fin';r.textContent='Resposta: '+q.o[q.a];d.appendChild(r)}};lab();d.appendChild(b)}
+function count(el,to,ms){const s=performance.now(),f=n=>{const p=Math.min(1,(n-s)/ms);el.textContent=Math.round(to*(1-Math.pow(1-p,3)))+' pts';if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
+function finish(){const n=qs.length,pct=hits/n;$('title').textContent=pct>=.9?'Mandou muito bem!':pct>=.6?'Bom resultado!':'Vale treinar mais';count($('final'),score,1200);
+$('s1').textContent=hits+'/'+n;$('s2').textContent=best;const nF=qs.filter(q=>q.s==='Física').length,nM=n-nF;$('s3').textContent=fh+'/'+nF;$('s4').textContent=(hits-fh)+'/'+nM;$('s3').parentElement.classList.toggle('hide',!nF);$('s4').parentElement.classList.toggle('hide',!nM);
+$('msg').textContent=pct>=.9?'Você domina os fundamentos de matemática e física.':pct>=.6?'Você está no caminho. Revise as questões que errou e tente bater sua pontuação.':'Releia as explicações de cada questão e tente de novo. A prática faz diferença.';
+const rv=$('rev');rv.innerHTML='';if(missed.length){const h=document.createElement('h2');h.textContent='Revise as questões que você errou';rv.appendChild(h);
+missed.forEach(q=>{const d=document.createElement('details'),s=document.createElement('summary'),ol=document.createElement('ol');s.textContent=q.q;d.appendChild(s);q.r.forEach(r=>{const[t,x]=r.split('|'),li=document.createElement('li');li.textContent=t+': '+x;ol.appendChild(li)});d.appendChild(ol);rv.appendChild(d)})}
+show('end');if(pct>=.6){spin=8;[0,350,700,1050].forEach((d,i)=>setTimeout(()=>{burst([0xffd166,0x7ea2ff,0xff9a62,0x5ad08a][i]);beep(520+i*130,.2)},d))}}
+function setTab(t){if(t===tab)return;if(tab==='quiz'&&cur==='game'&&!locked){clearInterval(timer);paused=Date.now()}tab=t;
+if(t==='quiz'&&paused){t0+=Date.now()-paused;paused=0;run()}
+$('tq').classList.toggle('on',t==='quiz');$('tl').classList.toggle('on',t==='lab');$('app').classList.toggle('hide',t==='lab');$('lab').classList.toggle('hide',t!=='lab');
+if(t==='lab')setView('lab');else setView(cur==='start'?'menu':cur)}
+$('tq').onclick=()=>setTab('quiz');$('tl').onclick=()=>setTab('lab');
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>start(b.dataset.m));$('again').onclick=()=>start();$('menu').onclick=()=>show('start');
+$('back').onclick=()=>{clearInterval(timer);paused=0;locked=true;tower(0);show('start')};$('next').onclick=()=>{qi++;qi<qs.length?render():finish()};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('modal').classList.contains('hide'))return closeCalc();if(tab!=='quiz'||$('game').classList.contains('hide'))return;
+if(!locked&&e.key>='1'&&e.key<='4')answer(+e.key-1);else if(locked&&e.key==='Enter'&&document.activeElement.tagName!=='BUTTON'){e.preventDefault();$('next').click()}});
+/* ===== LAB: controles ===== */
+['a','b','c','d','x'].forEach(k=>$('r'+k).oninput=e=>{L[k]=+e.target.value;upd()});
+$('ux').onchange=e=>{L.u=e.target.checked;$('rx').disabled=!L.u;upd()};
+const PRE={1:{a:1,b:0,c:0,d:0},2:{a:1,b:-2,c:-3,d:0},3:{a:.1,b:0,c:-3,d:0}};
+[1,2,3].forEach(n=>$('g'+n).onclick=()=>{Object.assign(L,PRE[n],{g:n});[1,2,3].forEach(k=>$('g'+k).classList.toggle('on',k===n));$('rowc').classList.toggle('hide',n===1);$('rowd').classList.toggle('hide',n!==3);$('ra').step=n===3?.1:.5;upd()});
+[0,1,2].forEach(n=>$('v'+n).onclick=()=>{vmode=n;[0,1,2].forEach(k=>$('v'+k).classList.toggle('on',k===n));dirty=true});
+$('zi').onclick=()=>Wm=Math.max(2.5,(Wm||W)/2);$('zo').onclick=()=>Wm=Math.min(1e7,(Wm||W)*2);$('za').onclick=()=>Wm=null;
+function closeCalc(){$('modal').classList.add('hide');$('calc').focus()}
+$('calc').onclick=openCalc;$('mx').onclick=closeCalc;$('modal').onclick=e=>{if(e.target===$('modal'))closeCalc()};
+upd();fit();setView('menu');loop();
+</script>
+</body>
+</html>
